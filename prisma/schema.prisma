@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  password      String?
+  role          String    @default("OWNER")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  accounts      Account[]
+  sessions      Session[]
+  profile       Profile?
+  contacts      Contact[] @relation("OwnedContacts")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Profile {
+  id                String   @id @default(cuid())
+  ownerUserId       String   @unique @map("owner_user_id")
+  slug              String   @unique
+  displayName       String   @map("display_name")
+  headline          String?
+  bioShort          String?  @db.Text @map("bio_short")
+  profilePhotoUrl   String?  @map("profile_photo_url")
+  company           String?
+  role              String?
+  location          String?
+  contactPreference String?  @map("contact_preference")
+  primaryCtaLabel   String?  @map("primary_cta_label")
+  primaryCtaUrl     String?  @map("primary_cta_url")
+  isPublic          Boolean  @default(true) @map("is_public")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  owner    User           @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  links    ProfileLink[]
+  contacts Contact[]
+  events   ProfileEvent[]
+
+  @@index([ownerUserId], map: "idx_profiles_owner_user_id")
+  @@map("profiles")
+}
+
+model ProfileLink {
+  id        String   @id @default(cuid())
+  profileId String   @map("profile_id")
+  platform  String
+  label     String
+  url       String   @db.Text
+  sortOrder Int      @default(0) @map("sort_order")
+  isVisible Boolean  @default(true) @map("is_visible")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, sortOrder], map: "idx_profile_links_profile_sort")
+  @@map("profile_links")
+}
+
+model Contact {
+  id                  String    @id @default(cuid())
+  ownerUserId         String    @map("owner_user_id")
+  sourceProfileId     String?   @map("source_profile_id")
+  fullName            String    @map("full_name")
+  email               String?
+  phone               String?
+  company             String?
+  role                String?
+  location            String?
+  notesFromContact    String?   @db.Text @map("notes_from_contact")
+  privateNotes        String?   @db.Text @map("private_notes")
+  meetingContext      String?   @db.Text @map("meeting_context")
+  sourceType          String    @default("manual") @map("source_type")
+  sourceLabel         String?   @map("source_label")
+  tags                String[]  @default([])
+  socialLinksJson     Json      @default("{}") @map("social_links_json")
+  followUpStatus      String    @default("not_started") @map("follow_up_status")
+  followUpDueAt       DateTime? @map("follow_up_due_at")
+  lastContactedAt     DateTime? @map("last_contacted_at")
+  manualFollowUpNote  String?   @db.Text @map("manual_follow_up_note")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  owner         User     @relation("OwnedContacts", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  sourceProfile Profile? @relation(fields: [sourceProfileId], references: [id], onDelete: SetNull)
+
+  @@index([ownerUserId, createdAt], map: "idx_contacts_owner_created")
+  @@index([ownerUserId, followUpStatus], map: "idx_contacts_owner_follow_up_status")
+  @@index([sourceProfileId], map: "idx_contacts_source_profile_id")
+  @@map("contacts")
+}
+
+model ProfileEvent {
+  id        String   @id @default(cuid())
+  profileId String   @map("profile_id")
+  type      String
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, type, createdAt], map: "idx_profile_events_profile_type_created")
+  @@map("profile_events")
+}

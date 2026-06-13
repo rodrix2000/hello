@@ -1,0 +1,10 @@
+{
+  "name": "SparkMeet",
+  "short_name": "SparkMeet",
+  "description": "Remember who you met and what to do next.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#FFF7EA",
+  "theme_color": "#FF7A1A",
+  "icons": []
+}

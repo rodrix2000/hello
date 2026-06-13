@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sparkmeet
+      POSTGRES_USER: sparkmeet
+      POSTGRES_PASSWORD: sparkmeet
+    ports:
+      - "55432:5432"
+    volumes:
+      - sparkmeet-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sparkmeet -d sparkmeet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://sparkmeet:sparkmeet@db:5432/sparkmeet
+      AUTH_SECRET: local-dev-auth-secret-change-me
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      SPARKMEET_OWNER_EMAIL: owner@example.com
+      SPARKMEET_OWNER_PASSWORD: change-me-at-least-8-chars
+      SPARKMEET_OWNER_NAME: SparkMeet Owner
+    ports:
+      - "3000:3000"
+
+volumes:
+  sparkmeet-postgres:
