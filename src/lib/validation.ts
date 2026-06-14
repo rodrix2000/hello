@@ -23,6 +23,11 @@ export const linkPlatforms = [
 ] as const;
 
 const optionalUrl = z.string().trim().url().or(z.literal('')).optional();
+const optionalImageValue = z.string().trim().max(2_200_000).refine((value) => {
+  if (!value) return true;
+  if (z.string().url().safeParse(value).success) return true;
+  return /^data:image\/(?:png|jpe?g|webp|gif);base64,[a-z0-9+/=]+$/i.test(value);
+}).optional();
 
 export const signupSchema = z.object({
   name: z.string().trim().max(120).optional(),
@@ -35,7 +40,7 @@ export const profileSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
   headline: z.string().trim().max(180).optional(),
   bioShort: z.string().trim().max(600).optional(),
-  profilePhotoUrl: optionalUrl,
+  profilePhotoUrl: optionalImageValue,
   company: z.string().trim().max(120).optional(),
   role: z.string().trim().max(120).optional(),
   location: z.string().trim().max(120).optional(),

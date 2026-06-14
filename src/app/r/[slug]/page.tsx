@@ -32,23 +32,23 @@ export default async function PublicProfilePage({ params }: { params: Params }) 
 
   return (
     <main className="shell">
-      <div className="container" style={{ padding: '18px 0 44px', maxWidth: 560 }}>
-        <section className="card" style={{ padding: 20, display: 'grid', gap: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 72, height: 72, borderRadius: 8, background: 'var(--warm-amber)', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: '1.7rem', overflow: 'hidden' }}>
+      <div className="container publicProfileShell">
+        <section className="card publicProfileCard">
+          <div className="publicProfileHero">
+            <div className="publicProfilePhoto">
               {profile.profilePhotoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.profilePhotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={profile.profilePhotoUrl} alt={`${profile.displayName} profile photo`} />
               ) : profile.displayName.slice(0, 1)}
             </div>
-            <div>
+            <div className="publicProfileIntro">
               <p className="statusPill statusPillHot" style={{ margin: '0 0 8px', width: 'fit-content' }}>SparkMeet</p>
-              <h1 style={{ margin: 0, fontSize: '2rem', lineHeight: 1.05 }}>{profile.displayName}</h1>
+              <h1>{profile.displayName}</h1>
+              {profile.headline ? <p>{profile.headline}</p> : null}
             </div>
           </div>
 
           <div>
-            {profile.headline ? <p style={{ margin: '0 0 8px', fontWeight: 850, fontSize: '1.08rem' }}>{profile.headline}</p> : null}
             {profile.bioShort ? <p className="muted" style={{ margin: 0, lineHeight: 1.55 }}>{profile.bioShort}</p> : null}
           </div>
 

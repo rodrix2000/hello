@@ -2,9 +2,11 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { requireUser } from '@/lib/session';
 import { saveProfileAction } from '@/app/dashboard/actions';
+import { ProfileImagePicker } from '@/components/dashboard/ProfileImagePicker';
 import { defaultProfileLinks, platformLabels } from '@/lib/platforms';
 import { publicProfileUrl, slugify } from '@/lib/urls';
 import { linkPlatforms } from '@/lib/validation';
+import { socialAvatarOptions } from '@/lib/social-avatar';
 
 type SearchParams = Promise<{ saved?: string; error?: string }>;
 
@@ -19,6 +21,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Sear
   });
 
   const existingLinks = new Map((profile?.links || []).map((link) => [link.platform, link]));
+  const avatarOptions = socialAvatarOptions(profile?.links || []);
   const linkRows = linkPlatforms.map((platform, index) => {
     const existing = existingLinks.get(platform);
     const fallback = defaultProfileLinks.find((link) => link.platform === platform);
@@ -47,8 +50,15 @@ export default async function ProfilePage({ searchParams }: { searchParams: Sear
       {params.saved ? <p className="statusPill statusPillHot" style={{ marginBottom: 12 }}>Profile saved</p> : null}
       {params.error === 'slug' ? <p style={{ color: 'var(--danger)', fontWeight: 800 }}>That slug is already taken.</p> : null}
       {params.error === 'profile' ? <p style={{ color: 'var(--danger)', fontWeight: 800 }}>Check required fields and link URLs.</p> : null}
+      {params.error === 'image' ? <p style={{ color: 'var(--danger)', fontWeight: 800 }}>Upload a PNG, JPG, WebP, or GIF under 1.5MB.</p> : null}
 
       <form action={saveProfileAction} className="card stack formPanel">
+        <ProfileImagePicker
+          currentUrl={profile?.profilePhotoUrl}
+          displayName={profile?.displayName || user.name || 'SparkMeet'}
+          options={avatarOptions}
+        />
+
         <div className="formGrid">
           <div>
             <label className="label" htmlFor="displayName">Name</label>
@@ -61,10 +71,6 @@ export default async function ProfilePage({ searchParams }: { searchParams: Sear
           <div>
             <label className="label" htmlFor="headline">Headline</label>
             <input className="input" id="headline" name="headline" defaultValue={profile?.headline || ''} placeholder="Founder, designer, community builder" />
-          </div>
-          <div>
-            <label className="label" htmlFor="profilePhotoUrl">Profile photo URL</label>
-            <input className="input" id="profilePhotoUrl" name="profilePhotoUrl" defaultValue={profile?.profilePhotoUrl || ''} placeholder="https://..." />
           </div>
           <div>
             <label className="label" htmlFor="company">Company/project</label>

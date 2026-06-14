@@ -1,5 +1,6 @@
 'use server';
 
+import { Buffer } from 'node:buffer';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
@@ -16,6 +17,20 @@ function optionalDate(value: string) {
   return value ? new Date(`${value}T12:00:00.000Z`) : null;
 }
 
+async function uploadedProfilePhoto(formData: FormData) {
+  const file = formData.get('profilePhotoFile');
+  if (!(file instanceof File) || file.size === 0) return '';
+
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  const maxBytes = 1.5 * 1024 * 1024;
+  if (!allowedTypes.includes(file.type) || file.size > maxBytes) {
+    redirect('/dashboard/profile?error=image');
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return `data:${file.type};base64,${buffer.toString('base64')}`;
+}
+
 async function getRequiredUserId() {
   const user = await requireUser();
   if (!user?.id) redirect('/login');
@@ -24,6 +39,7 @@ async function getRequiredUserId() {
 
 export async function saveProfileAction(formData: FormData) {
   const userId = await getRequiredUserId();
+  const profilePhotoUrl = await uploadedProfilePhoto(formData) || formValue(formData, 'profilePhotoUrl');
   const links = linkPlatforms.map((platform, index) => {
     const label = formValue(formData, `link_${platform}_label`);
     const url = formValue(formData, `link_${platform}_url`);
@@ -42,7 +58,7 @@ export async function saveProfileAction(formData: FormData) {
     displayName: formValue(formData, 'displayName'),
     headline: formValue(formData, 'headline'),
     bioShort: formValue(formData, 'bioShort'),
-    profilePhotoUrl: formValue(formData, 'profilePhotoUrl'),
+    profilePhotoUrl,
     company: formValue(formData, 'company'),
     role: formValue(formData, 'role'),
     location: formValue(formData, 'location'),
